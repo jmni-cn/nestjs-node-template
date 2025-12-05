@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 # 1. 切到 main 分支并拉取最新代码
 current_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -10,10 +9,13 @@ fi
 echo "拉取最新代码"
 git pull origin main
 
+# 2. 设置环境变量
+export NODE_ENV=production
+export APP_ENV=production
 
-docker compose down
+docker compose --env-file ./env/app.production.env down
 docker rmi jmni-server-app
-docker compose up -d --build
+docker compose --env-file ./env/app.production.env up -d --build
 # docker compose logs -f 
 
 docker logs -f jmni-app
