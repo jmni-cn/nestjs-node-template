@@ -1,0 +1,6 @@
+# 此目录用于存放生成的 API 文档
+# 运行 npm run doc:gen 会在此目录生成以下文件：
+# - openapi.json  : OpenAPI 3.0 规范
+# - api.md        : Markdown 格式文档
+# - index.html    : HTML 格式文档（Swagger UI）
+
