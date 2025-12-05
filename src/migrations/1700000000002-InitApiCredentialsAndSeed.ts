@@ -2,9 +2,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 import * as crypto from 'crypto';
 
-export class InitApiCredentialsAndSeed1700000000002
-  implements MigrationInterface
-{
+export class InitApiCredentialsAndSeed1700000000002 implements MigrationInterface {
   name = 'InitApiCredentialsAndSeed1700000000002';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

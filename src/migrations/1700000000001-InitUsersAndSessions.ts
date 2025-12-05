@@ -2,9 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { generateNumericUid } from '@/common/utils/uid-generator';
 
-export class InitUsersAndSessionsAndSeed1700000000001
-  implements MigrationInterface
-{
+export class InitUsersAndSessionsAndSeed1700000000001 implements MigrationInterface {
   name = 'InitUsersAndSessionsAndSeed1700000000001';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -115,9 +113,7 @@ export class InitUsersAndSessionsAndSeed1700000000001
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `ALTER TABLE \`user_sessions\` DROP FOREIGN KEY \`fk_sessions_user\`;`,
-    );
+    await queryRunner.query(`ALTER TABLE \`user_sessions\` DROP FOREIGN KEY \`fk_sessions_user\`;`);
     await queryRunner.query(`DROP TABLE IF EXISTS \`user_sessions\`;`);
     await queryRunner.query(`DROP TABLE IF EXISTS \`users\`;`);
   }

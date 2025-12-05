@@ -4,8 +4,8 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 /**
  * 创建分类管理表
  */
-export class CreateAdminCategoriesTable1700000070000 implements MigrationInterface {
-  name = 'CreateAdminCategoriesTable1700000070000';
+export class CreateAdminCategoriesTable1700000035000 implements MigrationInterface {
+  name = 'CreateAdminCategoriesTable1700000035000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     // 创建分类表
@@ -26,10 +26,10 @@ export class CreateAdminCategoriesTable1700000070000 implements MigrationInterfa
         \`sortOrder\` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '排序权重',
         \`status\` VARCHAR(16) NOT NULL DEFAULT 'enabled' COMMENT '状态：enabled/disabled',
         \`isDeleted\` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除标记',
-        \`createdBy\` INT UNSIGNED NULL COMMENT '创建人 ID',
+        \`createdBy\` INT NULL COMMENT '创建人 ID',
         \`createdByUid\` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '创建人 UID',
         \`createdByUsername\` VARCHAR(50) NOT NULL DEFAULT '' COMMENT '创建人用户名',
-        \`updatedBy\` INT UNSIGNED NULL COMMENT '最后修改人 ID',
+        \`updatedBy\` INT NULL COMMENT '最后修改人 ID',
         \`updatedByUid\` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '最后修改人 UID',
         \`updatedByUsername\` VARCHAR(50) NOT NULL DEFAULT '' COMMENT '最后修改人用户名',
         \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) COMMENT '创建时间',

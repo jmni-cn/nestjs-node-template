@@ -12,7 +12,7 @@ export class CreateSurveyResponsesTable1700000080000 implements MigrationInterfa
         -- 关联维度（问卷 & 用户）
         \`surveyId\` INT UNSIGNED NOT NULL COMMENT '问卷 ID',
         \`surveyUid\` VARCHAR(32) NOT NULL COMMENT '问卷 UID（冗余）',
-        \`userId\` INT UNSIGNED NULL COMMENT '用户 ID（可空 - 匿名提交）',
+        \`userId\` INT NULL COMMENT '用户 ID（可空 - 匿名提交）',
         \`userUid\` VARCHAR(32) NULL COMMENT '用户 UID',
         \`username\` VARCHAR(50) NOT NULL DEFAULT '' COMMENT '用户名（冗余）',
         
