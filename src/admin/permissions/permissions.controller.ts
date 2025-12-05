@@ -1,92 +1,65 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+// src/admin/permissions/permissions.controller.ts
+import { Controller, Get, Post, Body, Param, UseGuards, Query, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 
 import { AdminPermissionsService } from '@/admin/permissions/permissions.service';
-import { AdminPermission } from '@/admin/permissions/entities/permission.entity';
 import { CreatePermissionDto } from '@/admin/permissions/dto/create-permission.dto';
 import { UpdatePermissionDto } from '@/admin/permissions/dto/update-permission.dto';
 import { DeletePermissionDto } from '@/admin/permissions/dto/delete-permission.dto';
+import { QueryPermissionDto } from '@/admin/permissions/dto/query-permission.dto';
+import { PermissionVO, PermissionListVO, PermissionAffectedVO } from '@/admin/permissions/vo/PermissionVO';
 
 import { AdminJwtAuthGuard } from '@/admin/auth/admin-jwt.guard';
 import { PermissionsGuard } from '@/admin/common/guards/permissions.guard';
 import { Permissions } from '@/admin/common/decorators/permissions.decorator';
-import { ParseIntPipe } from '@nestjs/common';
-// import { SkipSignature } from '@/common/decorators/skip-signature.decorator';
+import { SkipSignature } from '@/common/decorators/skip-signature.decorator';
+import { IdsDto } from '@/common/dto/ids.dto';
 
 @ApiTags('admin-permissions')
 @ApiBearerAuth()
 @Controller('admin/permissions')
 @UseGuards(AdminJwtAuthGuard, PermissionsGuard)
+@SkipSignature()
 export class AdminPermissionsController {
   constructor(private readonly service: AdminPermissionsService) {}
 
   // CREATE
   @Post('create')
   @Permissions('permissions:write')
-  @ApiOperation({ summary: '创建权限（POST）' })
-  @ApiResponse({
-    status: 201,
-    description: '权限创建成功',
-    type: AdminPermission,
-  })
-  create(@Body() dto: CreatePermissionDto) {
+  @ApiOperation({ summary: '创建权限' })
+  @ApiResponse({ status: 201, description: '权限创建成功', type: PermissionVO })
+  @ApiResponse({ status: 400, description: '参数错误或权限编码已存在' })
+  async create(@Body() dto: CreatePermissionDto): Promise<PermissionVO> {
     return this.service.create(dto);
   }
 
   // LIST
   @Get()
-  // @SkipSignature()
   @Permissions('permissions:read', 'permissions:write')
-  @ApiOperation({ summary: '获取权限列表（GET）' })
-  @ApiQuery({
-    name: 'keyword',
-    required: false,
-    description: '按 name/code 模糊搜索',
-  })
-  @ApiQuery({ name: 'page', required: false, description: '页码（默认1）' })
-  @ApiQuery({
-    name: 'pageSize',
-    required: false,
-    description: '每页条数（默认20）',
-  })
-  @ApiResponse({
-    status: 200,
-    description: '返回权限列表',
-    type: [AdminPermission],
-  })
-  findAll(
-    @Query('keyword') keyword?: string,
-    @Query('page') page?: string,
-    @Query('pageSize') pageSize?: string,
-  ) {
-    const p = Math.max(parseInt(page || '1', 10) || 1, 1);
-    const ps = Math.min(Math.max(parseInt(pageSize || '20', 10) || 20, 1), 200);
-    return this.service.findAll({ keyword, page: p, pageSize: ps });
+  @ApiOperation({ summary: '获取权限列表（支持分页和搜索）' })
+  @ApiResponse({ status: 200, description: '返回权限列表', type: PermissionListVO })
+  async findAll(@Query() query: QueryPermissionDto): Promise<PermissionListVO> {
+    return this.service.findAll(query);
   }
 
   // DETAIL
   @Get(':id')
   @Permissions('permissions:read', 'permissions:write')
-  @ApiOperation({ summary: '根据ID获取权限（GET）' })
-  @ApiResponse({
-    status: 200,
-    description: '返回权限信息',
-    type: AdminPermission,
-  })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  @ApiOperation({ summary: '根据 ID 获取权限详情' })
+  @ApiParam({ name: 'id', description: '权限 ID' })
+  @ApiResponse({ status: 200, description: '返回权限信息', type: PermissionVO })
+  @ApiResponse({ status: 404, description: '权限不存在' })
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<PermissionVO> {
     return this.service.findOne(id);
   }
 
   // UPDATE
   @Post('update')
   @Permissions('permissions:write')
-  @ApiOperation({ summary: '更新权限（POST）' })
-  @ApiResponse({
-    status: 200,
-    description: '权限更新成功',
-    type: AdminPermission,
-  })
-  update(@Body() dto: UpdatePermissionDto) {
+  @ApiOperation({ summary: '更新权限' })
+  @ApiResponse({ status: 200, description: '权限更新成功', type: PermissionVO })
+  @ApiResponse({ status: 404, description: '权限不存在' })
+  async update(@Body() dto: UpdatePermissionDto): Promise<PermissionVO> {
     const { id, ...data } = dto;
     return this.service.update(id, data);
   }
@@ -94,17 +67,19 @@ export class AdminPermissionsController {
   // DELETE
   @Post('delete')
   @Permissions('permissions:write')
-  @ApiOperation({ summary: '删除权限（POST）' })
-  @ApiResponse({ status: 200, description: '权限删除成功' })
-  remove(@Body() dto: DeletePermissionDto) {
+  @ApiOperation({ summary: '删除权限' })
+  @ApiResponse({ status: 200, description: '权限删除成功', type: PermissionAffectedVO })
+  @ApiResponse({ status: 404, description: '权限不存在' })
+  async remove(@Body() dto: DeletePermissionDto): Promise<PermissionAffectedVO> {
     return this.service.remove(dto.id);
   }
 
-  // （可选）批量删除
+  // 批量删除
   @Post('batch-delete')
   @Permissions('permissions:write')
-  @ApiOperation({ summary: '批量删除权限（POST）' })
-  batchRemove(@Body() body: { ids: number[] }) {
+  @ApiOperation({ summary: '批量删除权限' })
+  @ApiResponse({ status: 200, description: '批量删除成功', type: PermissionAffectedVO })
+  async batchRemove(@Body() body: IdsDto): Promise<PermissionAffectedVO> {
     return this.service.batchRemove(body.ids || []);
   }
 }

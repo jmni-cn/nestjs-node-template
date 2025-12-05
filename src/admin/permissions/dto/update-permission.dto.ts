@@ -11,7 +11,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 
-export type PermType = 'api' | 'menu' | 'action';
+type PermType = 'api' | 'menu' | 'action';
 const HTTP_METHODS = [
   'GET',
   'POST',

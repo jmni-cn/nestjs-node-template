@@ -11,7 +11,7 @@ import {
 import { Transform } from 'class-transformer';
 
 // 与实体保持一致
-export type PermType = 'api' | 'menu' | 'action';
+type PermType = 'api' | 'menu' | 'action';
 const HTTP_METHODS = [
   'GET',
   'POST',

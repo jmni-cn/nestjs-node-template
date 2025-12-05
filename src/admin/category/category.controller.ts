@@ -10,7 +10,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth, ApiBody, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 
 import { CategoryService } from './category.service';
@@ -56,6 +56,8 @@ export class CategoryController {
 
   @Post('create')
   @ApiOperation({ summary: '创建分类' })
+  @ApiResponse({ status: 201, description: '创建成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 400, description: '参数错误或分类已存在' })
   @Permissions('category:create')
   async create(
     @Body() dto: CreateCategoryDto,
@@ -68,6 +70,7 @@ export class CategoryController {
 
   @Get('list')
   @ApiOperation({ summary: '分页查询分类列表' })
+  @ApiResponse({ status: 200, description: '查询成功', type: CategoryListVO })
   @Permissions('category:read')
   async findAll(@Query() query: QueryCategoryDto): Promise<CategoryListVO> {
     return this.categoryService.findAll(query);
@@ -75,6 +78,7 @@ export class CategoryController {
 
   @Get('stats')
   @ApiOperation({ summary: '获取分类统计数据' })
+  @ApiResponse({ status: 200, description: '查询成功', type: CategoryStatsVO })
   @Permissions('category:read')
   async getStats(): Promise<CategoryStatsVO> {
     return this.categoryService.getStats();
@@ -83,6 +87,8 @@ export class CategoryController {
   @Get('tree/:moduleCode')
   @ApiOperation({ summary: '获取指定模块的分类树' })
   @ApiParam({ name: 'moduleCode', description: '模块编码', example: 'article' })
+  @ApiQuery({ name: 'onlyEnabled', required: false, description: '仅查询启用的分类' })
+  @ApiResponse({ status: 200, description: '查询成功', type: [CategoryTreeNodeVO] })
   @Permissions('category:read')
   async getTree(
     @Param('moduleCode') moduleCode: string,
@@ -94,6 +100,7 @@ export class CategoryController {
   @Get('options/:moduleCode')
   @ApiOperation({ summary: '获取分类选项列表（用于下拉选择）' })
   @ApiParam({ name: 'moduleCode', description: '模块编码', example: 'article' })
+  @ApiResponse({ status: 200, description: '查询成功', type: [CategoryOptionVO] })
   @Permissions('category:read')
   async getOptions(@Param('moduleCode') moduleCode: string): Promise<CategoryOptionVO[]> {
     return this.categoryService.getOptions(moduleCode);
@@ -103,6 +110,8 @@ export class CategoryController {
   @ApiOperation({ summary: '根据模块和 slug 查询分类' })
   @ApiParam({ name: 'moduleCode', description: '模块编码', example: 'article' })
   @ApiParam({ name: 'slug', description: 'URL 标识', example: 'tech-articles' })
+  @ApiResponse({ status: 200, description: '查询成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:read')
   async findBySlug(
     @Param('moduleCode') moduleCode: string,
@@ -114,6 +123,8 @@ export class CategoryController {
   @Get('uid/:uid')
   @ApiOperation({ summary: '根据 UID 查询分类详情' })
   @ApiParam({ name: 'uid', description: '分类 UID' })
+  @ApiResponse({ status: 200, description: '查询成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:read')
   async findByUid(@Param('uid') uid: string): Promise<CategoryDetailVO> {
     return this.categoryService.findByUid(uid);
@@ -122,6 +133,8 @@ export class CategoryController {
   @Get('detail/:id')
   @ApiOperation({ summary: '根据 ID 查询分类详情' })
   @ApiParam({ name: 'id', description: '分类 ID' })
+  @ApiResponse({ status: 200, description: '查询成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:read')
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<CategoryDetailVO> {
     return this.categoryService.findOne(id);
@@ -132,6 +145,8 @@ export class CategoryController {
   @Post('update/:id')
   @ApiOperation({ summary: '更新分类' })
   @ApiParam({ name: 'id', description: '分类 ID' })
+  @ApiResponse({ status: 200, description: '更新成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:update')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -144,6 +159,8 @@ export class CategoryController {
   @Post('enable/:id')
   @ApiOperation({ summary: '启用分类' })
   @ApiParam({ name: 'id', description: '分类 ID' })
+  @ApiResponse({ status: 200, description: '操作成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:update')
   async enable(
     @Param('id', ParseIntPipe) id: number,
@@ -155,6 +172,8 @@ export class CategoryController {
   @Post('disable/:id')
   @ApiOperation({ summary: '禁用分类' })
   @ApiParam({ name: 'id', description: '分类 ID' })
+  @ApiResponse({ status: 200, description: '操作成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:update')
   async disable(
     @Param('id', ParseIntPipe) id: number,
@@ -177,6 +196,9 @@ export class CategoryController {
       },
     },
   })
+  @ApiResponse({ status: 200, description: '操作成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 400, description: '无法移动到自身或子节点下' })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:update')
   async move(
     @Param('id', ParseIntPipe) id: number,
@@ -189,6 +211,8 @@ export class CategoryController {
   @Post('restore/:id')
   @ApiOperation({ summary: '恢复已删除的分类' })
   @ApiParam({ name: 'id', description: '分类 ID' })
+  @ApiResponse({ status: 200, description: '恢复成功', type: CategoryDetailVO })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:delete')
   async restore(
     @Param('id', ParseIntPipe) id: number,
@@ -202,6 +226,9 @@ export class CategoryController {
   @Post('delete/:id')
   @ApiOperation({ summary: '删除分类（软删除）' })
   @ApiParam({ name: 'id', description: '分类 ID' })
+  @ApiResponse({ status: 200, description: '删除成功' })
+  @ApiResponse({ status: 400, description: '该分类下有子分类，无法删除' })
+  @ApiResponse({ status: 404, description: '分类不存在' })
   @Permissions('category:delete')
   async remove(
     @Param('id', ParseIntPipe) id: number,
@@ -217,6 +244,7 @@ export class CategoryController {
       properties: { ids: { type: 'array', items: { type: 'number' } } },
     },
   })
+  @ApiResponse({ status: 200, description: '批量删除成功' })
   @Permissions('category:delete')
   async batchRemove(
     @Body('ids') ids: number[],

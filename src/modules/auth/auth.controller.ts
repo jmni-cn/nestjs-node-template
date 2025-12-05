@@ -1,5 +1,6 @@
+// src/modules/auth/auth.controller.ts
 import { Controller, Post, Body, Req, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
 import { AuthService } from './auth.service';
 import { LoginDto } from '@/modules/users/dto/login-user.dto';
@@ -10,12 +11,8 @@ import { SendEmailCodeDto } from './dto/send-email-code.dto';
 import { EmailCodeService } from './email-code.service';
 import { Client } from '@/common/decorators/client.decorator';
 import { ClientMeta } from '@/types/client-meta.type';
-import {
-  RateLimit,
-  LoginRateLimit,
-  StrictRateLimit,
-  NormalRateLimit,
-} from '@/common/guards/rate-limit.guard';
+import { RateLimit, LoginRateLimit } from '@/common/guards/rate-limit.guard';
+import { LoginVO, RegisterVO, RefreshVO, SendEmailCodeVO } from './vo/AuthVO';
 
 /**
  * 用户认证控制器
@@ -39,6 +36,9 @@ export class AuthController {
    * 限流：3 次/分钟（非常严格，防止滥发邮件）
    */
   @ApiOperation({ summary: '发送邮箱验证码（注册/登录/重置）' })
+  @ApiResponse({ status: 200, description: '发送成功', type: SendEmailCodeVO })
+  @ApiResponse({ status: 400, description: '邮箱格式错误' })
+  @ApiResponse({ status: 429, description: '请求过于频繁' })
   @SkipSignature()
   @RateLimit({
     windowMs: 60,
@@ -56,7 +56,7 @@ export class AuthController {
     },
   })
   @Post('email/send')
-  async sendEmailCode(@Body() dto: SendEmailCodeDto, @Req() req: FastifyRequest) {
+  async sendEmailCode(@Body() dto: SendEmailCodeDto, @Req() req: FastifyRequest): Promise<SendEmailCodeVO> {
     const ip =
       (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
       (req.headers['x-real-ip'] as string) ||
@@ -70,10 +70,13 @@ export class AuthController {
    * 限流：5 次/分钟（按 IP + 用户名，防止暴力破解）
    */
   @ApiOperation({ summary: '用户登录（颁发 Access/Refresh，落会话）' })
+  @ApiResponse({ status: 200, description: '登录成功', type: LoginVO })
+  @ApiResponse({ status: 401, description: '用户名或密码错误' })
+  @ApiResponse({ status: 429, description: '请求过于频繁' })
   @SkipSignature()
   @LoginRateLimit() // 登录限流：5 次/分钟（按 IP + 用户名）
   @Post('login')
-  async login(@Body() dto: LoginDto, @Req() req: FastifyRequest, @Client() c: ClientMeta) {
+  async login(@Body() dto: LoginDto, @Req() req: FastifyRequest, @Client() c: ClientMeta): Promise<LoginVO> {
     dto.deviceId = c.deviceId;
     dto.deviceName = c.deviceName;
     dto.platform = c.platform;
@@ -89,6 +92,9 @@ export class AuthController {
    * 限流：5 次/分钟（防止批量注册）
    */
   @ApiOperation({ summary: '用户注册（可含邮箱验证码校验）并自动登录' })
+  @ApiResponse({ status: 201, description: '注册成功', type: RegisterVO })
+  @ApiResponse({ status: 400, description: '用户名或邮箱已存在' })
+  @ApiResponse({ status: 429, description: '请求过于频繁' })
   @SkipSignature()
   @RateLimit({
     windowMs: 60,
@@ -104,7 +110,7 @@ export class AuthController {
     },
   })
   @Post('register')
-  async register(@Body() dto: CreateUserDto, @Req() req: FastifyRequest) {
+  async register(@Body() dto: CreateUserDto, @Req() req: FastifyRequest): Promise<RegisterVO> {
     return this.authService.register(dto, {
       ip: (req.headers['x-forwarded-for'] as string) ?? (req as any).ip,
       ua: req.headers['user-agent'],
@@ -116,6 +122,10 @@ export class AuthController {
    * 限流：20 次/分钟
    */
   @ApiOperation({ summary: '刷新 Access（轮换 RefreshToken）' })
+  @ApiBearerAuth()
+  @ApiResponse({ status: 200, description: '刷新成功', type: RefreshVO })
+  @ApiResponse({ status: 401, description: 'Refresh Token 无效或已过期' })
+  @ApiResponse({ status: 429, description: '请求过于频繁' })
   @SkipSignature()
   @UseGuards(JwtRefreshGuard)
   @RateLimit({
@@ -124,7 +134,7 @@ export class AuthController {
     message: 'Token 刷新过于频繁，请稍后再试',
   })
   @Post('refresh')
-  async refresh(@Req() req: FastifyRequest) {
+  async refresh(@Req() req: FastifyRequest): Promise<RefreshVO> {
     return this.authService.refresh(req.user);
   }
 }

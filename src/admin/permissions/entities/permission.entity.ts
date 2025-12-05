@@ -11,7 +11,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { AdminRole } from '@/admin/roles/entities/role.entity';
 
-export type PermType = 'api' | 'menu' | 'action';
+type PermType = 'api' | 'menu' | 'action';
 
 @Entity('admin_permissions')
 @Index(['code'], { unique: true })
